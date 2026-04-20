@@ -6,7 +6,7 @@ corrected forecast better matches USGS observed runoff.
 
 ## What's here vs. what you need to do
 
-**Done for you (infrastructure):**
+**Done (infrastructure):**
 - Data ingestion and alignment (NWM monthly CSVs + USGS 15-min → hourly parquet)
 - Sliding-window PyTorch dataset with proper scaler fit-on-train-only
 - Standard hydrology metrics (NSE, KGE, RMSE, MAE, PBIAS)
@@ -14,7 +14,7 @@ corrected forecast better matches USGS observed runoff.
 - Evaluation comparing DL-corrected forecast vs raw NWM on the held-out test set
 - A working **LSTM** baseline
 
-**Left for you (the actual assignment):**
+**Left (the actual assignment):**
 - Implement `GRUPredictor` in `src/models.py` (stubbed with hints)
 - Implement `TransformerPredictor` in `src/models.py` (stubbed with hints)
 - Plug in **ERA5** meteorological features (preprocessing has a clean hook)
@@ -36,6 +36,8 @@ runoff_forecasting/
 ├── scripts/
 │   ├── preprocess.py         CLI: raw dir → parquet files
 │   └── train_baseline.py     CLI: train one model, save artifacts
+├── notebooks/
+│   └── 01_eda.ipynb          Exploratory data analysis (run after preprocessing)
 ├── data/
 │   └── processed/            (parquets land here)
 ├── runs/                     (created per training run)
@@ -75,6 +77,20 @@ Output: `data/processed/gauge_<reach>.parquet` per gauge. Each parquet is
 | `usgs_estimated` | True if any 15-min value in that hour was flagged `e` |
 | `nwm_lead_1..nwm_lead_18` | NWM forecast valid at this hour, made at `t - lead` hours |
 | `resid_lead_1..resid_lead_18` | `usgs_flow - nwm_lead_h` — the residual the model is trained to predict |
+
+## Step 1.5 — Exploratory data analysis
+
+Open `notebooks/01_eda.ipynb` in Jupyter or VSCode and run all cells:
+
+```bash
+jupyter notebook notebooks/01_eda.ipynb
+# or just open it in VSCode and click "Run All"
+```
+
+The notebook has ten sections covering streamflow characterization, NWM
+error analysis, and feature correlation. Each section has markdown prompts
+("Your notes here...") where you should record your observations as you go
+— these directly feed the Data section of the report.
 
 ## Step 2 — Train the LSTM baseline
 
@@ -117,86 +133,3 @@ and compare the three `summary.json` files.
 
 ---
 
-## What a "fair" comparison looks like (for the report)
-
-For each (model, gauge, lead time) combination:
-
-1. Same lookback window (48h recommended).
-2. Same train/val/test split — the test window (Oct 2022 – Apr 2023) is
-   hard-coded in `split_train_val_test` per the assignment rules; never
-   touch it during training or tuning.
-3. Same random seed. Even better, run each model 3–5 times with different
-   seeds and report mean ± std.
-4. Match parameter count approximately (hidden size × num layers).
-5. Compare on the same metrics, against the same raw-NWM baseline.
-
-Report table you'll want to produce:
-
-| Gauge | Lead (h) | Model | NSE ↑ | KGE ↑ | RMSE ↓ | MAE ↓ | PBIAS → 0 | Params |
-|---|---|---|---|---|---|---|---|---|
-| 21609641 | 6 | NWM raw | 0.928 | 0.791 | 4.55 | 2.49 | −16.4 | — |
-| 21609641 | 6 | LSTM | 0.948 | 0.843 | 3.86 | 1.79 | −10.7 | 59,265 |
-| 21609641 | 6 | GRU | ... | ... | ... | ... | ... | ... |
-| 21609641 | 6 | Transformer | ... | ... | ... | ... | ... | ... |
-| ...and so on for multiple lead times and both gauges |
-
-Good plots for the report:
-- Training curves (train vs val loss per epoch, one panel per model).
-- Hydrograph over a representative test-period week: obs, raw NWM, corrected.
-- Scatter: predicted vs observed flow for raw NWM and for each model.
-- NSE (or KGE) vs lead hour for all three models — shows where each does best.
-
----
-
-## Adding ERA5 (for the final-exam requirement)
-
-ERA5 reanalysis gives you hourly meteorological forcings (precipitation,
-2-metre temperature, radiation, wind, etc.) that NWM itself consumes. Adding
-them as model inputs is often what pushes DL post-processing from "slightly
-better than NWM" to "meaningfully better".
-
-Suggested workflow:
-
-1. Look up each gauge's lat/lon (via the USGS Site Info web service) and
-   pick a small spatial window around each basin.
-2. Register for a free Copernicus CDS account (`cds.climate.copernicus.eu`).
-   Approval can take 1–2 days, so **start this early**.
-3. Use the `cdsapi` Python package to pull ERA5-Land hourly variables:
-   `total_precipitation`, `2m_temperature`, `surface_solar_radiation_downwards`,
-   `10m_u_component_of_wind`, `10m_v_component_of_wind`. Spatially-average
-   over the basin to a single time series per variable.
-4. Extend `build_gauge_dataset` to left-join those columns onto the hourly
-   parquet. Add them to `default_feature_cols()` in `src/dataset.py`.
-5. Re-run all three models and compare with/without ERA5 — that
-   ablation is great material for the report.
-
----
-
-## Troubleshooting
-
-- **`ModuleNotFoundError: src`** — run the scripts from the project root
-  (`runoff_forecasting/`), not from inside `scripts/` or `src/`.
-- **Slow on CPU** — the default (2-layer, 64-hidden LSTM, 48h window, 128
-  batch) is ~10s/epoch on CPU, so 30 epochs is ~5 minutes. Fine for laptops.
-  On GPU it'll be seconds.
-- **Val loss higher than train loss** — expected; we're regularizing with
-  dropout. What you want is for val loss to *decrease over epochs*.
-- **Negative NSE on test** — raw NWM on gauge 20380357 has an extreme bias
-  (NWM mean ~22× USGS mean). The DL correction still dramatically improves
-  it, but not enough to reach positive NSE. Worth flagging in the report.
-
----
-
-## References
-
-Han, H. & Morrison, R. R. (2022). *Improved runoff forecasting performance
-through error predictions using a deep-learning approach.* Journal of
-Hydrology, 608, 127653. → `Improved runoff forecasting performance
-through error predictions using a deep-learning approach.pdf` in the
-midterm folder.
-
-NOAA National Water Model: <https://water.noaa.gov/about/nwm>
-
-ERA5-Land docs: <https://cds.climate.copernicus.eu/datasets/reanalysis-era5-land>
-
-USGS Water Services: <https://waterservices.usgs.gov/>
