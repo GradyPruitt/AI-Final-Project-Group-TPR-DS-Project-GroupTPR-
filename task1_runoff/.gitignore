@@ -1,0 +1,17 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.ipynb_checkpoints/
+
+# Data artifacts
+data/processed/*.parquet
+runs/
+*.pt
+*.ckpt
+
+# OS
+.DS_Store
+Thumbs.db
