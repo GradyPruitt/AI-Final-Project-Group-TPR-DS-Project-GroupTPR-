@@ -1,0 +1,5 @@
+# Data files
+task1_runoff/data/
+*.nc
+*.grib
+*.csv

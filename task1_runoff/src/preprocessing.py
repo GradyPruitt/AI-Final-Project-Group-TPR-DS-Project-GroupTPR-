@@ -154,6 +154,21 @@ def build_gauge_dataset(
     # Inner-join on timestamp so every row has both observed and forecast.
     merged = usgs_hourly.join(nwm_wide, how="inner").sort_index()
 
+
+    era5 = pd.read_csv("era5_point_timeseries.csv", parse_dates=["time"])
+    era5 = era5.set_index("time").sort_index()
+
+    # align ERA5 to hourly timeline
+    era5 = era5.resample("1h").ffill()
+
+    # merge into main dataframe
+    merged = merged.join(era5, how="left")
+
+    # forward fill remaining small gaps
+    merged = merged.ffill()
+
+    print(merged.columns)
+    
     # Basic cleaning
     lead_cols = [c for c in merged.columns if c.startswith("nwm_lead_")]
 
