@@ -1,0 +1,37 @@
+{
+  "config": {
+    "manifest_csv": "data/processed/buildings_manifest.csv",
+    "image_size": 224,
+    "pad_frac": 0.1,
+    "model": "efficientnet",
+    "freeze_early": true,
+    "dropout": 0.3,
+    "batch_size": 32,
+    "lr": 0.0001,
+    "weight_decay": 0.0001,
+    "epochs": 10,
+    "patience": 5,
+    "use_class_weights": true,
+    "seed": 42,
+    "device": "cpu",
+    "out_dir": "runs"
+  },
+  "n_params_trainable": 4271296,
+  "n_params_total": 4337026,
+  "best_val_loss": 0.6284899040713289,
+  "test_metrics": {
+    "accuracy": 0.7830188679245284,
+    "within_one_acc": 0.9669811320754716,
+    "macro_f1": 0.7968343958535762,
+    "mae_levels": 0.2688679245283019,
+    "per_class_acc": {
+      "0": 0.9444444444444444,
+      "1": 0.8604651162790697,
+      "2": 0.75,
+      "3": 0.6753246753246753,
+      "4": 0.78125,
+      "5": 1.0
+    }
+  },
+  "out_dir": "runs/efficientnet_1777678511"
+}

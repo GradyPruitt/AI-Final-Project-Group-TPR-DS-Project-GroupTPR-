@@ -1,0 +1,37 @@
+{
+  "config": {
+    "manifest_csv": "data/processed/buildings_manifest.csv",
+    "image_size": 224,
+    "pad_frac": 0.1,
+    "model": "vit",
+    "freeze_early": true,
+    "dropout": 0.3,
+    "batch_size": 16,
+    "lr": 0.0001,
+    "weight_decay": 0.0001,
+    "epochs": 10,
+    "patience": 5,
+    "use_class_weights": true,
+    "seed": 42,
+    "device": "cpu",
+    "out_dir": "runs"
+  },
+  "n_params_trainable": 28703494,
+  "n_params_total": 85997062,
+  "best_val_loss": 0.6059566050905236,
+  "test_metrics": {
+    "accuracy": 0.8254716981132075,
+    "within_one_acc": 0.9811320754716981,
+    "macro_f1": 0.8264614268646526,
+    "mae_levels": 0.20754716981132076,
+    "per_class_acc": {
+      "0": 1.0,
+      "1": 0.7674418604651163,
+      "2": 0.75,
+      "3": 0.8051948051948052,
+      "4": 0.875,
+      "5": 0.9285714285714286
+    }
+  },
+  "out_dir": "runs/vit_1777685579"
+}
