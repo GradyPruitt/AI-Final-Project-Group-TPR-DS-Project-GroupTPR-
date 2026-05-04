@@ -185,3 +185,16 @@ def default_feature_cols() -> list[str]:
     or expand it once ERA5 is added.
     """
     return ["usgs_flow"] + [f"nwm_lead_{h}" for h in range(1, 19)]
+
+
+def era5_augmented_feature_cols() -> list[str]:
+    """Default features plus the 5 ERA5 meteorological columns added by
+    scripts/integrate_era5.py. Use this for the with-ERA5 ablation runs.
+    """
+    return default_feature_cols() + [
+        "era5_t2m_c",
+        "era5_tp_mm",
+        "era5_sp_pa",
+        "era5_wind_speed",
+        "era5_wind_dir",
+    ]

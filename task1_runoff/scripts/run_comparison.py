@@ -35,6 +35,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import pandas as pd
 
 from src.train import TrainConfig, run  # noqa: E402
+from src.dataset import default_feature_cols, era5_augmented_feature_cols  # noqa: E402
 
 
 def main() -> int:
@@ -46,6 +47,9 @@ def main() -> int:
     ap.add_argument("--leads", type=int, nargs="+",
                     default=[1, 6, 12, 18],
                     help="Target lead hours to run.")
+    ap.add_argument("--features", choices=["default", "era5"], default="default",
+                    help="'default' = USGS+NWM only. 'era5' = also include ERA5 meteorological "
+                         "features (requires merge_era5.py to have been run). Default: default.")
     ap.add_argument("--models", nargs="+",
                     default=["lstm", "gru", "transformer"],
                     choices=["lstm", "gru", "transformer"],
@@ -83,10 +87,13 @@ def main() -> int:
                 print(f"[{run_i}/{n_runs}] gauge {gauge} | lead {lead}h | {model}")
                 print("="*70)
 
+                feature_cols = (era5_augmented_feature_cols() if args.features == "era5"
+                                else default_feature_cols())
                 cfg = TrainConfig(
                     parquet=str(parquet),
                     target_lead=lead,
                     lookback=args.lookback,
+                    feature_cols=feature_cols,
                     model=model,
                     hidden_size=args.hidden_size,
                     batch_size=args.batch_size,
@@ -102,6 +109,7 @@ def main() -> int:
                     "gauge": gauge,
                     "lead_h": lead,
                     "model": model,
+                    "features": args.features,
                     "n_params": summary["n_params"],
                 }
                 for prefix, key in [("nwm_", "metrics_nwm_baseline"),
